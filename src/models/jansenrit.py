@@ -1,5 +1,7 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
+from config import base_jr_params
 
 
 
@@ -59,7 +61,7 @@ def jansen_rit(t, y, p=120.0, A=3.25, B=22.0, a=100.0, b=50.0, C=135.0):
     return [dy0, dy1, dy2, dy3, dy4, dy5]
 
 
-def solve_jr(t_end=2000, sf=1000, params=None, y0_init=None):
+def solve_jr(t_end=2.0, sf=1000, params=None, y0_init=None):
     """
     sf = 1000 # sampling frequency 1000Hz
     t_end = how long the sim will run for
@@ -96,8 +98,20 @@ def solve_jr(t_end=2000, sf=1000, params=None, y0_init=None):
     return sol
 
 
-def simulate_observation(params=None, t_end=2000, sf=1000):
+def simulate_observation(params=None, t_end=2.0, sf=1000):
     sol = solve_jr(t_end=t_end, sf=sf, params=params)
     t = sol.t
     eeg_proxy = sol.y[1] - sol.y[2]
     return t, eeg_proxy
+
+def plot_observation(t=None, eeg_proxy=None):
+    plt.figure()
+    
+    plt.plot(t, eeg_proxy)
+    plt.title("JR Sim Run")
+    plt.show()
+
+
+
+plot_observation(*simulate_observation(params=base_jr_params))
+
