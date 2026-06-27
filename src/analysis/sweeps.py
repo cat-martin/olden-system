@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from src.config import fhn_a_base, fhn_tau_base, base_fhn_params, base_jr_params
 from src.models.fhn import simulate_fhn
 from src.models.jansenrit import simulate_jr
+from src.models.hetero_fhn import sim_fhn_hetero_pop_a
 
 def stats(t, y_axis, transient=0.5):
     # a function that takes the output of a sim and produces a record of the sim's stats
@@ -200,8 +201,77 @@ def jr_q_sweep(base_jr_params):
     plt.title("JR homogeneous sweep: q (timescale multiplier)")
     plt.show()
 
+def hetero_fhn_a_sweep(h_vals):
+
+    t_homo, V, _ = simulate_fhn(**base_fhn_params)
+    homo_stats = stats(t_homo, V)
+
+    records = []
+
+    for h in h_vals:
+        t, pop_mean_V, V_traces, _ = sim_fhn_hetero_pop_a(baseline_params=base_fhn_params, h=h)
+
+        hetero_stats = stats(t, pop_mean_V)
+
+        record = {
+                    "model": "FHN",
+                    "parameter": "a",
+                    "h": h,
+                    "homo_mean": homo_stats["mean"],
+                    "homo_std": homo_stats["std"],
+                    "homo_dom_freq": homo_stats["dom_freq"],
+                    "homo_peak_to_peak": homo_stats["peak to peak"],
+                    "hetero_mean": hetero_stats["mean"],
+                    "hetero_std": hetero_stats["std"],
+                    "hetero_dom_freq": hetero_stats["dom_freq"],
+                    "hetero_peak_to_peak": hetero_stats["peak to peak"],
+        }
+
+        record["delta_mean"] = abs(
+            hetero_stats["mean"] - homo_stats["mean"]
+        )
+
+        record["delta_std"] = abs(
+            hetero_stats["std"] - homo_stats["std"]
+        )
+
+        record["delta_dom_freq"] = abs(
+            hetero_stats["dom_freq"] - homo_stats["dom_freq"]
+        )
+
+        record["delta_peak_to_peak"] = abs(
+            hetero_stats["peak to peak"] - homo_stats["peak to peak"]
+        )
+
+        records.append(record)
+
+        plt.figure()
+        plt.title("Basic heterogeneity test")
+        plt.xlabel("time")
+        plt.ylabel("V")
+
+        for i in range(5):
+            plt.plot(t, V_traces[i], alpha=0.6)
+
+        plt.plot(t, pop_mean_V, label="Heterogeneous")
+        plt.plot(t, V, label="Homogeneous")
+        plt.show()
+
+    results_df = pd.DataFrame(records)
+    print(results_df)
+
+    plt.figure()
+    plt.title("h vs std change")
+    plt.plot(results_df["h"], results_df["delta_std"], marker='o', label="std delta")
+    plt.plot(results_df["h"], results_df["delta_peak_to_peak"], marker='o', label="delta peak to peak")
+    plt.xlabel("h level")
+    plt.ylabel("delta")
+    plt.legend()
+    plt.show()
+
 
 
 # fhn_t_sweep(base_fhn_params)
 # jr_v_sweep(base_jr_params=base_jr_params)
-jr_q_sweep(base_jr_params=base_jr_params)
+# jr_q_sweep(base_jr_params=base_jr_params)
+hetero_fhn_a_sweep([0.0, 0.25, 0.5, 0.75, 1.0])
