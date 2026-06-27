@@ -87,11 +87,11 @@ V_std = np.std(V_steady)
 # plt.show()
 
 
-plt.plot(t_points[mask], V[mask], label="V")
-plt.plot(t_points[mask], w[mask], label="w")
+# plt.plot(t_points[mask], V[mask], label="V")
+# plt.plot(t_points[mask], w[mask], label="w")
 
-plt.xlabel("Time")
-plt.ylabel("State Val")
-plt.title("FHN State Evolution")
-plt.legend()
-plt.show()
+# plt.xlabel("Time")
+# plt.ylabel("State Val")
+# plt.title("FHN State Evolution")
+# plt.legend()
+# plt.show()

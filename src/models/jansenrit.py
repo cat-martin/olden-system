@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
-from config import base_jr_params
+from src.config import base_jr_params
 
 
 
@@ -18,7 +18,7 @@ def sigmoid(v, e0=2.5, v0=6.0, r=0.56):
 
 
 # to work with the IVP solver, this must accept time and state vector (t, y) and return a derivative vector
-def jansen_rit(t, y, p=120.0, A=3.25, B=22.0, a=100.0, b=50.0, C=135.0):
+def jansen_rit(t, y, p=120.0, A=3.25, B=22.0, a=100.0, b=50.0, C=135.0, v0=6.0):
     """
     y0 = pyramidal PSP
     y1 = excitatory PSP input to pyramidal cells
@@ -49,13 +49,13 @@ def jansen_rit(t, y, p=120.0, A=3.25, B=22.0, a=100.0, b=50.0, C=135.0):
     dy2 = y5
 
     # y1 - y2 is the net synaptic input to the pyramidal cells
-    dy3 = A * a * sigmoid(y1 - y2) - 2 * a * y3 - (a**2) * y0
+    dy3 = A * a * sigmoid(v=(y1 - y2), v0=v0) - 2 * a * y3 - (a**2) * y0
 
     # excitatory interneuron synaptic eq
-    dy4 = A * a * (p + C2 * sigmoid(C1 * y0)) - 2 * a * y4 - (a**2) * y1
+    dy4 = A * a * (p + C2 * sigmoid(v=(C1 * y0), v0=v0)) - 2 * a * y4 - (a**2) * y1
 
     # inhibitory interneuron synaptic eq
-    dy5 = B * b * (C4 * sigmoid(C3 * y0)) - 2 * b * y5 - (b**2) * y2
+    dy5 = B * b * (C4 * sigmoid(v=(C3 * y0), v0=v0)) - 2 * b * y5 - (b**2) * y2
 
     # return vector of derivatives for IVP solver
     return [dy0, dy1, dy2, dy3, dy4, dy5]
@@ -98,20 +98,17 @@ def solve_jr(t_end=2.0, sf=1000, params=None, y0_init=None):
     return sol
 
 
-def simulate_observation(params=None, t_end=2.0, sf=1000):
+def simulate_jr(params=None, t_end=2.0, sf=1000):
     sol = solve_jr(t_end=t_end, sf=sf, params=params)
     t = sol.t
     eeg_proxy = sol.y[1] - sol.y[2]
+
+    # plt.figure()
+    # plt.plot(t, eeg_proxy)
+    # plt.title("JR Sim Run")
+    # plt.show()
+
     return t, eeg_proxy
 
-def plot_observation(t=None, eeg_proxy=None):
-    plt.figure()
-    
-    plt.plot(t, eeg_proxy)
-    plt.title("JR Sim Run")
-    plt.show()
-
-
-
-plot_observation(*simulate_observation(params=base_jr_params))
+simulate_jr(params=base_jr_params)
 
