@@ -1,7 +1,6 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
-from src.config import base_jr_params
+from src.util.config import base_jr_params
 
 
 

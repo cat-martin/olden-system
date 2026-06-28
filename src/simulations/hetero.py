@@ -1,6 +1,6 @@
 import numpy as np
 from src.models.fhn import simulate_fhn
-from src.config import half_widths
+from src.util.config import half_widths
 
 '''
 want to create a heterogeneous parameter population with an exact baseline mean
@@ -54,8 +54,13 @@ def hetero_sim(
         num_units=100, 
         seed=37):
     
+    if param_to_vary == "tau":
+        baseline = 1/baseline_params["c"]
+    else:
+        baseline = baseline_params[param_to_vary]
+    
     vals = hetero_vals(
-        baseline=baseline_params[param_to_vary], 
+        baseline=baseline, 
         half_width=half_widths[param_to_vary], 
         h=h, 
         num_units=num_units, 

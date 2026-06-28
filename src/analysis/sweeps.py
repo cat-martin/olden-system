@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from src.config import fhn_a_base, fhn_tau_base, base_fhn_params, half_widths
+from src.util.config import fhn_a_base, fhn_tau_base, base_fhn_params, half_widths, simple_h_vals
 from src.models.fhn import simulate_fhn
 from src.models.jansenrit import simulate_jr
-from src.models.hetero_fhn import hetero_sim, set_a_vals, set_tau_vals
+from src.simulations.hetero import hetero_sim, set_a_vals, set_tau_vals
 
 def stats(t, y_axis, transient=0.5):
     # a function that takes the output of a sim and produces a record of the sim's stats
@@ -201,7 +201,7 @@ def jr_q_sweep(base_jr_params):
     plt.title("JR homogeneous sweep: q (timescale multiplier)")
     plt.show()
 
-def hetero_sweep(baseline_params, h_vals, sim_fn, set_fn, half_widths,param_to_vary):
+def hetero_sweep(baseline_params, h_vals, sim_fn, set_fn, half_widths, param_to_vary):
 
     if param_to_vary == 'a' or param_to_vary == 'tau': model = 'FHN'
     else: model = 'JR'
@@ -280,13 +280,12 @@ def hetero_sweep(baseline_params, h_vals, sim_fn, set_fn, half_widths,param_to_v
     plt.legend()
     plt.show()
 
-simple_h_vals = [0.0, 0.25, 0.5, 0.75, 1.0]
+
 
 # fhn_t_sweep(base_fhn_params)
 # jr_v_sweep(base_jr_params=base_jr_params)
 # jr_q_sweep(base_jr_params=base_jr_params)
-# hetero_fhn_sweep(simple_h_vals, sim_fhn_hetero_pop_a)
-# hetero_fhn_sweep(simple_h_vals, sim_fhn_hetero_pop_tau)
+
 hetero_sweep(
     baseline_params=base_fhn_params,
     h_vals=simple_h_vals,
@@ -294,4 +293,13 @@ hetero_sweep(
     set_fn=set_a_vals,
     half_widths=half_widths,
     param_to_vary='a'
+)
+
+hetero_sweep(
+    baseline_params=base_fhn_params,
+    h_vals=simple_h_vals,
+    sim_fn=simulate_fhn,
+    set_fn=set_tau_vals,
+    half_widths=half_widths,
+    param_to_vary='tau'
 )

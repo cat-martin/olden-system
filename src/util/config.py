@@ -21,5 +21,7 @@ half_widths = {
     'tau': 7.0
 }
 
+simple_h_vals = [0.0, 0.25, 0.5, 0.75, 1.0]
+
 fhn_a_base = -0.1
 fhn_tau_base = 1/0.02
