@@ -44,6 +44,17 @@ def set_tau_vals(baseline_params, tau):
     unit_params["b"] = kappa * unit_params["c"]
     return unit_params
 
+def set_q_vals(baseline_params, q):
+    unit_params = baseline_params.copy()
+    unit_params["a"] = baseline_params["a"] / q
+    unit_params["b"] = baseline_params["b"] / q
+    return unit_params
+
+def set_v_vals(baseline_params, v):
+    unit_params = baseline_params.copy()
+    unit_params["v0"] = v
+    return unit_params
+
 def hetero_sim(
         baseline_params, 
         h, 
@@ -70,7 +81,7 @@ def hetero_sim(
 
     for val in vals:
         unit_params = set_fn(baseline_params, val)
-        t, V = sim_fn(**unit_params)
+        t, V = sim_fn(unit_params)
 
         V_traces.append(V)
 

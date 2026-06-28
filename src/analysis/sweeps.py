@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from src.util.config import fhn_a_base, fhn_tau_base, base_fhn_params, half_widths, simple_h_vals
+from src.util.config import fhn_a_base, fhn_tau_base, base_fhn_params, half_widths, simple_h_vals, base_jr_params
 from src.models.fhn import simulate_fhn
 from src.models.jansenrit import simulate_jr
-from src.simulations.hetero import hetero_sim, set_a_vals, set_tau_vals
+from src.simulations.hetero import hetero_sim, set_a_vals, set_tau_vals, set_q_vals, set_v_vals
 
 def stats(t, y_axis, transient=0.5):
     # a function that takes the output of a sim and produces a record of the sim's stats
@@ -33,7 +33,7 @@ def stats(t, y_axis, transient=0.5):
         "peak to peak": amplitude
     }
 
-def fhn_a_sweep():
+def fhn_a_sweep(baseline_params=base_fhn_params):
     '''
     Sweeps values of parameter 'a' to determine the edges of the baseline dynamical regime for the FHN model while varying excitability.
 
@@ -45,7 +45,8 @@ def fhn_a_sweep():
     # a_values = np.linspace(-0.31, -0.25, 31)
     for a_value in a_values:
         # run simulation using this parameter value
-        t, V = simulate_fhn(a=a_value)
+        baseline_params["a"] = a_value
+        t, V = simulate_fhn(baseline_params)
 
         # calculate output statistics
         record = stats(t, V)
@@ -91,7 +92,7 @@ def fhn_tau_sweep(base_fhn_params):
         sweep_params["b"] = b_val
         sweep_params["c"] = c_val
 
-        t, V = simulate_fhn(**sweep_params)
+        t, V = simulate_fhn(sweep_params)
 
         # calculate output statistics
         record = stats(t, V)
@@ -206,7 +207,7 @@ def hetero_sweep(baseline_params, h_vals, sim_fn, set_fn, half_widths, param_to_
     if param_to_vary == 'a' or param_to_vary == 'tau': model = 'FHN'
     else: model = 'JR'
 
-    t_homo, V = sim_fn(**baseline_params)
+    t_homo, V = sim_fn(baseline_params)
     homo_stats = stats(t_homo, V)
 
     records = []
@@ -286,20 +287,29 @@ def hetero_sweep(baseline_params, h_vals, sim_fn, set_fn, half_widths, param_to_
 # jr_v_sweep(base_jr_params=base_jr_params)
 # jr_q_sweep(base_jr_params=base_jr_params)
 
-hetero_sweep(
-    baseline_params=base_fhn_params,
-    h_vals=simple_h_vals,
-    sim_fn=simulate_fhn,
-    set_fn=set_a_vals,
-    half_widths=half_widths,
-    param_to_vary='a'
-)
+# hetero_sweep(
+#     baseline_params=base_fhn_params,
+#     h_vals=simple_h_vals,
+#     sim_fn=simulate_fhn,
+#     set_fn=set_a_vals,
+#     half_widths=half_widths,
+#     param_to_vary='a'
+# )
+
+# hetero_sweep(
+#     baseline_params=base_fhn_params,
+#     h_vals=simple_h_vals,
+#     sim_fn=simulate_fhn,
+#     set_fn=set_tau_vals,
+#     half_widths=half_widths,
+#     param_to_vary='tau'
+# )
 
 hetero_sweep(
-    baseline_params=base_fhn_params,
+    baseline_params=base_jr_params,
     h_vals=simple_h_vals,
-    sim_fn=simulate_fhn,
-    set_fn=set_tau_vals,
+    sim_fn=simulate_jr,
+    set_fn=set_v_vals,
     half_widths=half_widths,
-    param_to_vary='tau'
+    param_to_vary='v0'
 )

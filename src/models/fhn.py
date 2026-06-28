@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.integrate import solve_ivp
+from src.util.config import base_fhn_params
 
 # rhs of the ivp solver
 def fhn_rhs(t, state, a, b, c, I):
@@ -19,7 +20,14 @@ I = 0.1 #0.1
 
 
 
-def simulate_fhn(a=-0.1, b=0.01, c=0.02, I=0.1):
+def simulate_fhn(params=base_fhn_params):
+
+    a, b, c, I = (
+        params["a"],
+        params["b"],
+        params["c"],
+        params["I"],
+    )
 
     # ivp solver settings
     init_state = [0.0, 0.0]
@@ -41,22 +49,23 @@ def simulate_fhn(a=-0.1, b=0.01, c=0.02, I=0.1):
     return t_points, V
 
 
-
-t_points, V = simulate_fhn(c=(1/57))
+# params = base_fhn_params.copy()
+# params["c"] = 1/57
+# t_points, V = simulate_fhn(params)
 
 
 
 
 # transient check, chop off first 100 secs
-transient = 100.0
-mask = t_points >= transient
+# transient = 100.0
+# mask = t_points >= transient
 
-# baseline descriptors
-V_steady = V[mask]
+# # baseline descriptors
+# V_steady = V[mask]
 
-V_mean = np.mean(V_steady)
+# V_mean = np.mean(V_steady)
 
-V_std = np.std(V_steady)
+# V_std = np.std(V_steady)
 
 # print("Mean V: ", V_mean)
 # print("Std V: ", V_std)
