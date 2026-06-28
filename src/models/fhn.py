@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
 # rhs of the ivp solver
@@ -38,13 +37,12 @@ def simulate_fhn(a=-0.1, b=0.01, c=0.02, I=0.1):
 
     # unpack soln into state vars over time
     V = sol.y[0]
-    w = sol.y[1]
 
-    return t_points, V, w
-
+    return t_points, V
 
 
-t_points, V, w = simulate_fhn(c=(1/57))
+
+t_points, V = simulate_fhn(c=(1/57))
 
 
 
@@ -55,9 +53,9 @@ mask = t_points >= transient
 
 # baseline descriptors
 V_steady = V[mask]
-w_steady = w[mask]
+
 V_mean = np.mean(V_steady)
-w_mean = np.mean(w_steady)
+
 V_std = np.std(V_steady)
 
 # print("Mean V: ", V_mean)

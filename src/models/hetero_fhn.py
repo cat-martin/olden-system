@@ -1,8 +1,6 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from src.models.fhn import simulate_fhn
-from src.config import base_fhn_params
-
+from src.config import half_widths
 
 '''
 want to create a heterogeneous parameter population with an exact baseline mean
@@ -33,29 +31,105 @@ def hetero_vals(baseline, half_width, h, num_units=100, seed=None):
 
     return params
 
-def sim_fhn_hetero_pop_a(baseline_params, h, half_width=0.17, num_units=100, seed=37):
-    '''
-    Simulates a population of FHN neurons of the specified heterogeneity level.
-    '''
-    a_vals = hetero_vals(baseline=baseline_params["a"], half_width=half_width, h=h, num_units=num_units, seed=seed)
+def set_a_vals(baseline_params, a_val):
+    unit_params = baseline_params.copy()
+    unit_params['a'] = a_val
+    return unit_params
+
+def set_tau_vals(baseline_params, tau):
+    unit_params = baseline_params.copy()
+    kappa = baseline_params['b'] / baseline_params['c']
+    
+    unit_params["c"] = 1.0/tau
+    unit_params["b"] = kappa * unit_params["c"]
+    return unit_params
+
+def hetero_sim(
+        baseline_params, 
+        h, 
+        half_widths, 
+        param_to_vary,
+        sim_fn, 
+        set_fn, 
+        num_units=100, 
+        seed=37):
+    
+    vals = hetero_vals(
+        baseline=baseline_params[param_to_vary], 
+        half_width=half_widths[param_to_vary], 
+        h=h, 
+        num_units=num_units, 
+        seed=seed)
 
     V_traces = []
 
-    # simulate and store traces for each unit
-    for a_val in a_vals:
-        unit_params = baseline_params.copy()
-        unit_params["a"] = a_val
+    for val in vals:
+        unit_params = set_fn(baseline_params, val)
+        t, V = sim_fn(**unit_params)
 
-        t, V, _ = simulate_fhn(**unit_params)
-    
         V_traces.append(V)
 
-    # turn list of arrays into 2D array
     V_traces = np.array(V_traces)
-
-    # average along the 0 axis, aka take average of V across all units at each time point
     pop_mean_V = np.mean(V_traces, axis=0)
 
-    return t, pop_mean_V, V_traces, a_vals
+    return t, pop_mean_V, V_traces, vals
+
+
+
+
+
+
+# def sim_fhn_hetero_pop_a(baseline_params, h, half_width=0.17, num_units=100, seed=37):
+#     '''
+#     Simulates a population of FHN neurons of the specified heterogeneity level, varying parameter 'a'.
+#     '''
+#     a_vals = hetero_vals(baseline=baseline_params["a"], half_width=half_width, h=h, num_units=num_units, seed=seed)
+
+#     V_traces = []
+
+#     # simulate and store traces for each unit
+#     for a_val in a_vals:
+#         unit_params = baseline_params.copy()
+#         unit_params["a"] = a_val
+
+#         t, V, _ = simulate_fhn(**unit_params)
+    
+#         V_traces.append(V)
+
+#     # turn list of arrays into 2D array
+#     V_traces = np.array(V_traces)
+
+#     # average along the 0 axis, aka take average of V across all units at each time point
+#     pop_mean_V = np.mean(V_traces, axis=0)
+
+#     return t, pop_mean_V, V_traces, a_vals
+
+# def sim_fhn_hetero_pop_tau(baseline_params, h, half_width=7.0, num_units=100, seed=37):
+#     '''
+#     Simulates a population of FHN neurons of the specified heterogeneity level, varying the recovery timescale 1/c while keeping b/c fixed.
+#     '''
+
+#     tau_vals = hetero_vals(baseline=1/baseline_params["c"], half_width=half_width, h=h, num_units=num_units, seed=seed)
+
+#     V_traces = []
+
+#     kappa = baseline_params['b'] / baseline_params['c']
+
+#     for tau in tau_vals:
+#         unit_params = baseline_params.copy()
+#         unit_params["c"] = 1.0/tau
+#         unit_params["b"] = kappa * unit_params["c"]
+
+#         t, V, _ = simulate_fhn(**unit_params)
+
+#         V_traces.append(V)
+
+#     V_traces = np.array(V_traces)
+
+#     pop_mean_V = np.mean(V_traces, axis=0)
+
+#     return t, pop_mean_V, V_traces, tau_vals
+
+
 
 

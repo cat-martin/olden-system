@@ -16,5 +16,10 @@ base_fhn_params = {
     'I': 0.1
 }
 
+half_widths = {
+    'a': 0.17,
+    'tau': 7.0
+}
+
 fhn_a_base = -0.1
 fhn_tau_base = 1/0.02

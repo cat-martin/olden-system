@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from src.config import fhn_a_base, fhn_tau_base, base_fhn_params, base_jr_params
+from src.config import fhn_a_base, fhn_tau_base, base_fhn_params, half_widths
 from src.models.fhn import simulate_fhn
 from src.models.jansenrit import simulate_jr
-from src.models.hetero_fhn import sim_fhn_hetero_pop_a
+from src.models.hetero_fhn import hetero_sim, set_a_vals, set_tau_vals
 
 def stats(t, y_axis, transient=0.5):
     # a function that takes the output of a sim and produces a record of the sim's stats
@@ -45,7 +45,7 @@ def fhn_a_sweep():
     # a_values = np.linspace(-0.31, -0.25, 31)
     for a_value in a_values:
         # run simulation using this parameter value
-        t, V, w = simulate_fhn(a=a_value)
+        t, V = simulate_fhn(a=a_value)
 
         # calculate output statistics
         record = stats(t, V)
@@ -69,7 +69,7 @@ def fhn_a_sweep():
     plt.title("FHN homogeneous sweep: a")
     plt.show()
 
-def fhn_t_sweep(base_fhn_params):
+def fhn_tau_sweep(base_fhn_params):
     '''
     Sweeps values of 1/c while keeping b/c fixed, to determine the edges of the baseline dynamical regime for the FHN model while varying the parameter values controlling the timescale.
 
@@ -91,7 +91,7 @@ def fhn_t_sweep(base_fhn_params):
         sweep_params["b"] = b_val
         sweep_params["c"] = c_val
 
-        t, V, _ = simulate_fhn(**sweep_params)
+        t, V = simulate_fhn(**sweep_params)
 
         # calculate output statistics
         record = stats(t, V)
@@ -201,21 +201,31 @@ def jr_q_sweep(base_jr_params):
     plt.title("JR homogeneous sweep: q (timescale multiplier)")
     plt.show()
 
-def hetero_fhn_a_sweep(h_vals):
+def hetero_sweep(baseline_params, h_vals, sim_fn, set_fn, half_widths,param_to_vary):
 
-    t_homo, V, _ = simulate_fhn(**base_fhn_params)
+    if param_to_vary == 'a' or param_to_vary == 'tau': model = 'FHN'
+    else: model = 'JR'
+
+    t_homo, V = sim_fn(**baseline_params)
     homo_stats = stats(t_homo, V)
 
     records = []
 
     for h in h_vals:
-        t, pop_mean_V, V_traces, _ = sim_fhn_hetero_pop_a(baseline_params=base_fhn_params, h=h)
+        t, pop_mean_V, V_traces, _ = hetero_sim(
+            baseline_params=baseline_params, 
+            h=h, 
+            half_widths=half_widths,
+            sim_fn=sim_fn, 
+            set_fn=set_fn,
+            param_to_vary=param_to_vary
+            )
 
         hetero_stats = stats(t, pop_mean_V)
 
         record = {
-                    "model": "FHN",
-                    "parameter": "a",
+                    "model": model,
+                    "parameter": param_to_vary,
                     "h": h,
                     "homo_mean": homo_stats["mean"],
                     "homo_std": homo_stats["std"],
@@ -246,15 +256,16 @@ def hetero_fhn_a_sweep(h_vals):
         records.append(record)
 
         plt.figure()
-        plt.title("Basic heterogeneity test")
-        plt.xlabel("time")
-        plt.ylabel("V")
+        plt.title(f"{model} Heterogeneity Sweep: Deviation on '{param_to_vary}'")
+        plt.xlabel("Time")
+        plt.ylabel("Proxy Signal")
 
         for i in range(5):
             plt.plot(t, V_traces[i], alpha=0.6)
 
         plt.plot(t, pop_mean_V, label="Heterogeneous")
         plt.plot(t, V, label="Homogeneous")
+        plt.legend()
         plt.show()
 
     results_df = pd.DataFrame(records)
@@ -269,9 +280,18 @@ def hetero_fhn_a_sweep(h_vals):
     plt.legend()
     plt.show()
 
-
+simple_h_vals = [0.0, 0.25, 0.5, 0.75, 1.0]
 
 # fhn_t_sweep(base_fhn_params)
 # jr_v_sweep(base_jr_params=base_jr_params)
 # jr_q_sweep(base_jr_params=base_jr_params)
-hetero_fhn_a_sweep([0.0, 0.25, 0.5, 0.75, 1.0])
+# hetero_fhn_sweep(simple_h_vals, sim_fhn_hetero_pop_a)
+# hetero_fhn_sweep(simple_h_vals, sim_fhn_hetero_pop_tau)
+hetero_sweep(
+    baseline_params=base_fhn_params,
+    h_vals=simple_h_vals,
+    sim_fn=simulate_fhn,
+    set_fn=set_a_vals,
+    half_widths=half_widths,
+    param_to_vary='a'
+)
