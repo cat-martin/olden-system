@@ -5,9 +5,16 @@ from src.util.config import fhn_a_base, fhn_tau_base, base_fhn_params, half_widt
 from src.models.fhn import simulate_fhn
 from src.models.jansenrit import simulate_jr
 from src.simulations.hetero import hetero_sim, set_a_vals, set_tau_vals, set_q_vals, set_v_vals
+from src.analysis.visualization import plot_h_vs_std, plot_homo_vs_hetero, plot_four_panel_hetero
+
+'''
+Interval sweeps are crude and could be refactored to condense code.
+'''
 
 def stats(t, y_axis, transient=0.5):
-    # a function that takes the output of a sim and produces a record of the sim's stats
+    '''
+    A function that takes the output of a sim and produces a record of the sim's stats.
+    '''
 
     mask = t >= transient
     # cut out the transient
@@ -174,7 +181,6 @@ def jr_q_sweep(base_jr_params):
 
     q_vals = np.linspace(0.8, 100, 101)
 
-
     for q in q_vals:
 
         sweep_params = base_jr_params.copy()
@@ -202,10 +208,15 @@ def jr_q_sweep(base_jr_params):
     plt.title("JR homogeneous sweep: q (timescale multiplier)")
     plt.show()
 
-def hetero_sweep(baseline_params, h_vals, sim_fn, set_fn, half_widths, param_to_vary):
+def hetero_sweep(baseline_params, h_vals, sim_fn, set_fn, half_widths, param_to_vary, unit_traces=True, four_panel=False):
+    '''
+    Model agnostic heterogeneous sweep fn.
+    '''
 
     if param_to_vary == 'a' or param_to_vary == 'tau': model = 'FHN'
     else: model = 'JR'
+
+    plot_data = []
 
     t_homo, V = sim_fn(baseline_params)
     homo_stats = stats(t_homo, V)
@@ -256,30 +267,36 @@ def hetero_sweep(baseline_params, h_vals, sim_fn, set_fn, half_widths, param_to_
 
         records.append(record)
 
-        plt.figure()
-        plt.title(f"{model} Heterogeneity Sweep: Deviation on '{param_to_vary}'")
-        plt.xlabel("Time")
-        plt.ylabel("Proxy Signal")
+        if unit_traces:
+            plot_homo_vs_hetero(model=model, 
+                                param_to_vary=param_to_vary, 
+                                h=h, t=t, 
+                                V_traces=V_traces, 
+                                pop_mean_V=pop_mean_V, 
+                                V=V, 
+                                unit_traces=unit_traces
+                                )
+        else: plot_data.append({
+            'model': model,
+            'parameter': param_to_vary,
+            'h': h,
+            't': t,
+            'homo_trace': V,
+            'hetero_trace': pop_mean_V,
+        })
+        
 
-        for i in range(5):
-            plt.plot(t, V_traces[i], alpha=0.6)
-
-        plt.plot(t, pop_mean_V, label="Heterogeneous")
-        plt.plot(t, V, label="Homogeneous")
-        plt.legend()
-        plt.show()
+    if not unit_traces and four_panel: plot_four_panel_hetero(plot_data=plot_data)
 
     results_df = pd.DataFrame(records)
-    print(results_df)
+    # print(results_df)
 
-    plt.figure()
-    plt.title("h vs std change")
-    plt.plot(results_df["h"], results_df["delta_std"], marker='o', label="std delta")
-    plt.plot(results_df["h"], results_df["delta_peak_to_peak"], marker='o', label="delta peak to peak")
-    plt.xlabel("h level")
-    plt.ylabel("delta")
-    plt.legend()
-    plt.show()
+    # if len(h_vals) > 1:
+    #     plot_h_vs_std(results_df=results_df)
+
+    return results_df, plot_data
+
+
 
 
 
@@ -287,29 +304,4 @@ def hetero_sweep(baseline_params, h_vals, sim_fn, set_fn, half_widths, param_to_
 # jr_v_sweep(base_jr_params=base_jr_params)
 # jr_q_sweep(base_jr_params=base_jr_params)
 
-# hetero_sweep(
-#     baseline_params=base_fhn_params,
-#     h_vals=simple_h_vals,
-#     sim_fn=simulate_fhn,
-#     set_fn=set_a_vals,
-#     half_widths=half_widths,
-#     param_to_vary='a'
-# )
 
-# hetero_sweep(
-#     baseline_params=base_fhn_params,
-#     h_vals=simple_h_vals,
-#     sim_fn=simulate_fhn,
-#     set_fn=set_tau_vals,
-#     half_widths=half_widths,
-#     param_to_vary='tau'
-# )
-
-hetero_sweep(
-    baseline_params=base_jr_params,
-    h_vals=simple_h_vals,
-    sim_fn=simulate_jr,
-    set_fn=set_v_vals,
-    half_widths=half_widths,
-    param_to_vary='v0'
-)

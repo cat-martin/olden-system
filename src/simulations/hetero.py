@@ -65,8 +65,11 @@ def hetero_sim(
         num_units=100, 
         seed=37):
     
+    # handle special cases where hetero params are derived
     if param_to_vary == "tau":
         baseline = 1/baseline_params["c"]
+    elif param_to_vary == "q":
+        baseline = 1
     else:
         baseline = baseline_params[param_to_vary]
     
