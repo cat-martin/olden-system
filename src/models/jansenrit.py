@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.integrate import solve_ivp
-from src.util.config import base_jr_params
 
 
 
@@ -102,12 +101,5 @@ def simulate_jr(params=None, t_end=2.0, sf=1000):
     t = sol.t
     eeg_proxy = sol.y[1] - sol.y[2]
 
-    # plt.figure()
-    # plt.plot(t, eeg_proxy)
-    # plt.title("JR Sim Run")
-    # plt.show()
-
     return t, eeg_proxy
-
-simulate_jr(params=base_jr_params)
 

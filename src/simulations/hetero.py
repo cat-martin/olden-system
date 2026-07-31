@@ -82,6 +82,12 @@ def hetero_sim(
 
     V_traces = []
 
+    print(
+    f"Simulating {num_units} units for "
+    f"{param_to_vary} heterogeneity at h={h:.2f}...",
+    flush=True,
+    )
+
     for val in vals:
         unit_params = set_fn(baseline_params, val)
         t, V = sim_fn(unit_params)
@@ -92,6 +98,14 @@ def hetero_sim(
     pop_mean_V = np.mean(V_traces, axis=0)
 
     return t, pop_mean_V, V_traces, vals
+
+
+
+
+
+
+
+
 
 
 

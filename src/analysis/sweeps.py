@@ -11,12 +11,13 @@ from src.analysis.visualization import plot_h_vs_std, plot_homo_vs_hetero, plot_
 Interval sweeps are crude and could be refactored to condense code.
 '''
 
-def stats(t, y_axis, transient=0.5):
+def stats(t, y_axis, transient_frac=0.2):
     '''
     A function that takes the output of a sim and produces a record of the sim's stats.
+    The transient_frac parameter calculates the percentage of the simulation data to remove from the beginning.
     '''
-
-    mask = t >= transient
+    # assumes sim doesn't start at zero just in case
+    mask = t >= (t[0] + transient_frac * (t[-1] - t[0]))
     # cut out the transient
     t_cut = t[mask]
     y_cut = y_axis[mask]

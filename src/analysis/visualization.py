@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
 
@@ -114,7 +115,7 @@ def plot_cross_model_comparison(four_panel_data, target_h=1.0):
 
     # each tuple stores dictionary key, title for subplot
     # r makes it a raw string
-    # $$ for mathjax
+    # $$ for mathtext
     panel_specs = [
         ("FHN a", r"(a) FHN threshold: $a$"),
         ("JR v0", r"(b) JR threshold: $v_0$"),
@@ -295,7 +296,8 @@ def plot_degradation_panels(dataframes):
 
 
 def plot_fragility_scores(dataframes):
-    _, scores = calculate_relative_fragility_scores(dataframes)
+    raw_scores, scores = calculate_relative_fragility_scores(dataframes)
+    
 
     test_order = [
         "FHN a",
@@ -352,6 +354,8 @@ def plot_fragility_scores(dataframes):
 
     fig.tight_layout()
     plt.show()
+
+    return raw_scores, scores
 
 
 # one visual showing multiple individual traces and phase degredation

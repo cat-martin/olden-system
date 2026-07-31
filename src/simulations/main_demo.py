@@ -1,3 +1,5 @@
+import pandas as pd
+
 from src.analysis.sweeps import hetero_sweep
 from src.util.config import *
 from src.simulations.hetero import set_a_vals, set_q_vals, set_tau_vals, set_v_vals
@@ -14,7 +16,7 @@ def main():
 
     print("\nSweep illustrating differences in JR population mean \nwith and without heterogeneous 'v0' values. Demonstrates \nhow dephasing causes oscillation collapse in heterogeneous \npopulation mean:\n")
 
-    hetero_sweep(
+    dataframe, plot_data = hetero_sweep(
         baseline_params=base_jr_params,
         h_vals=[0.75],
         sim_fn=simulate_jr,
@@ -51,6 +53,7 @@ def main():
     )
     four_panel_data["JR v0"] = plot_data
     dataframes["JR v0"] = dataframe
+
 
     dataframe, plot_data = hetero_sweep(
         baseline_params=base_jr_params,
