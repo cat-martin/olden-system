@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+def cut_transient(t, transient_frac=0.2):
+    end = t[0] + transient_frac * (t[-1] - t[0])
+    return t >= end
 
 def calculate_relative_fragility_scores(dataframes):
     raw_scores = {}

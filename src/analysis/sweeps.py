@@ -1,23 +1,42 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from src.util.config import fhn_a_base, fhn_tau_base, base_fhn_params, half_widths, simple_h_vals, base_jr_params
+from src.util.config import (
+    fhn_a_base,
+    fhn_tau_base,
+    base_fhn_params,
+    half_widths,
+    simple_h_vals,
+    base_jr_params,
+)
 from src.models.fhn import simulate_fhn
 from src.models.jansenrit import simulate_jr
-from src.simulations.hetero import hetero_sim, set_a_vals, set_tau_vals, set_q_vals, set_v_vals
-from src.analysis.visualization import plot_h_vs_std, plot_homo_vs_hetero, plot_four_panel_hetero
+from src.simulations.hetero import (
+    hetero_sim,
+    set_a_vals,
+    set_tau_vals,
+    set_q_vals,
+    set_v_vals,
+)
+from src.analysis.visualization import (
+    plot_h_vs_std,
+    plot_homo_vs_hetero,
+    plot_four_panel_hetero,
+)
+from src.analysis.math import cut_transient
 
-'''
+"""
 Interval sweeps are crude and could be refactored to condense code.
-'''
+"""
+
 
 def stats(t, y_axis, transient_frac=0.2):
-    '''
+    """
     A function that takes the output of a sim and produces a record of the sim's stats.
     The transient_frac parameter calculates the percentage of the simulation data to remove from the beginning.
-    '''
+    """
     # assumes sim doesn't start at zero just in case
-    mask = t >= (t[0] + transient_frac * (t[-1] - t[0]))
+    mask = cut_transient(t, transient_frac)
     # cut out the transient
     t_cut = t[mask]
     y_cut = y_axis[mask]
@@ -27,9 +46,13 @@ def stats(t, y_axis, transient_frac=0.2):
 
     # dominant frequency
     dt = t_cut[1] - t_cut[0]
-    freqs = np.fft.rfftfreq(len(y_cut), d=dt)   # create possible frequencies
-    spectrum = np.abs(np.fft.rfft(y_cut - y_mean))  # remove vertical offset, return strength of frequency contributions
-    dominant_idx = np.argmax(spectrum[1:]) + 1   # ignores frequency 0, returns largest of remaining values, +1 since we skip frq 0
+    freqs = np.fft.rfftfreq(len(y_cut), d=dt)  # create possible frequencies
+    spectrum = np.abs(
+        np.fft.rfft(y_cut - y_mean)
+    )  # remove vertical offset, return strength of frequency contributions
+    dominant_idx = (
+        np.argmax(spectrum[1:]) + 1
+    )  # ignores frequency 0, returns largest of remaining values, +1 since we skip frq 0
     dominant_freq = freqs[dominant_idx]
 
     amplitude = np.ptp(y_cut)
@@ -38,15 +61,16 @@ def stats(t, y_axis, transient_frac=0.2):
         "mean": y_mean,
         "std": y_std,
         "dom_freq": dominant_freq,
-        "peak to peak": amplitude
+        "peak to peak": amplitude,
     }
 
+
 def fhn_a_sweep(baseline_params=base_fhn_params):
-    '''
+    """
     Sweeps values of parameter 'a' to determine the edges of the baseline dynamical regime for the FHN model while varying excitability.
 
-    Using a symmetric interval convention, the course bounds for the dynamic regime appear to be -0.27, 0.07. This uses the shortest distance from the baseline to an edge, and applies that distance on the other side of the baseline to create an interval. 
-    '''
+    Using a symmetric interval convention, the course bounds for the dynamic regime appear to be -0.27, 0.07. This uses the shortest distance from the baseline to an edge, and applies that distance on the other side of the baseline to create an interval.
+    """
     records = []
 
     a_values = np.linspace(0.4, 0.8, 50)
@@ -70,21 +94,20 @@ def fhn_a_sweep(baseline_params=base_fhn_params):
     results_df = pd.DataFrame(records)
     print(results_df)
 
-    # results_df.to_csv("fhn_a_sweep.csv", index=False)
-
     plt.plot(results_df["parameter_value"], results_df["peak to peak"], marker="o")
     plt.xlabel("a")
     plt.ylabel("peak to peak")
     plt.title("FHN homogeneous sweep: a")
     plt.show()
 
+
 def fhn_tau_sweep(base_fhn_params):
-    '''
+    """
     Sweeps values of 1/c while keeping b/c fixed, to determine the edges of the baseline dynamical regime for the FHN model while varying the parameter values controlling the timescale.
 
     for baseline params, lower bound appears to be tau - 43.0
     upper bound for testing purposes will be tau = 57, so as to center an interval around the baseline value of 50.
-    '''
+    """
     records = []
 
     tau_vals = np.linspace(2, 200, 100)
@@ -125,59 +148,112 @@ def fhn_tau_sweep(base_fhn_params):
     plt.show()
 
 
+# bad version that did not work bc it did not test late window oscillation persistence
+# def jr_v_sweep(base_jr_params):
+#     '''
+#     Sweep to discover the edges of the dynamical regime that the baseline parameter set creates, varying v0. The coarse bounds appear to be 4.8, 6.6.
+
+#     The baseline value is 6.0, so we use 5.5, 6.5 as the interval by the symmetric interval convention.
+
+#     Note there is a weird amplitude change that is not smooth between 6.1 and 6.5. Oscillations until 6.55, where there is a sharp spike in amplitude and then a collapse to zero.
+
+# EDIT: initial sweep concealed a slow regime change, and the actual observational boundary is 5.9, 6.1
+#     '''
+#     records = []
+
+#     # v_vals = np.linspace(2.0, 8.0, 50)
+#     # v_vals = np.linspace(4.7, 7, 100)
+#     v_vals = np.linspace(6.0, 6.6, 100)
+
+
+#     for v in v_vals:
+
+#         sweep_params = base_jr_params.copy()
+#         sweep_params["v0"] = v
+
+#         t, proxy = simulate_jr(params=sweep_params)
+
+#         # calculate output statistics
+#         record = stats(t, proxy)
+
+#         # add identifying information
+#         record["model"] = "JR"
+#         record["parameter"] = "v0"
+#         record["parameter_value"] = v
+#         record["scale"] = v / base_jr_params["v0"]
+
+#         records.append(record)
+
+#     results_df = pd.DataFrame(records)
+#     print(results_df)
+
+#     # results_df.to_csv("fhn_a_sweep.csv", index=False)
+
+#     plt.plot(results_df["parameter_value"], results_df["peak to peak"], marker="o")
+#     plt.xlabel("v_0")
+#     plt.ylabel("peak to peak")
+#     plt.title("JR homogeneous sweep: v_0")
+#     plt.show()
+
+
 def jr_v_sweep(base_jr_params):
-    '''
-    Sweep to discover the edges of the dynamical regime that the baseline parameter set creates, varying v0. The coarse bounds appear to be 4.8, 6.6.
-
-    The baseline value is 6.0, so we use 5.5, 6.5 as the interval by the symmetric interval convention.
-
-    Note there is a weird amplitude change that is not smooth between 6.1 and 6.5. Oscillations until 6.55, where there is a sharp spike in amplitude and then a collapse to zero.
-    '''
     records = []
 
-    # v_vals = np.linspace(2.0, 8.0, 50)
-    # v_vals = np.linspace(4.7, 7, 100)
-    v_vals = np.linspace(6.0, 6.6, 100)
-
+    # coarse scan of the current proposed interval, reveals new regime change
+    v_vals = np.linspace(5.5, 6.5, 51)
+    sweep_duration = 10.48
 
     for v in v_vals:
-
         sweep_params = base_jr_params.copy()
         sweep_params["v0"] = v
 
-        t, proxy = simulate_jr(params=sweep_params)
+        t, proxy = simulate_jr(
+            params=sweep_params,
+            t_end=sweep_duration,
+        )
 
-        # calculate output statistics
-        record = stats(t, proxy)
+        n = len(proxy)
 
-        # add identifying information
-        record["model"] = "JR"
-        record["parameter"] = "v0"
-        record["parameter_value"] = v
-        record["scale"] = v / base_jr_params["v0"]
+        # compare the penultimate and final 20% of the simulation.
+        previous = proxy[int(0.60 * n) : int(0.80 * n)]
+        final = proxy[int(0.80 * n) :]
 
-        records.append(record)
+        previous_ptp = np.ptp(previous)
+        final_ptp = np.ptp(final)
+
+        stability_ratio = final_ptp / previous_ptp if previous_ptp > 1e-12 else np.nan
+
+        records.append(
+            {
+                "v0": v,
+                "previous_peak_to_peak": previous_ptp,
+                "final_peak_to_peak": final_ptp,
+                "stability_ratio": stability_ratio,
+            }
+        )
 
     results_df = pd.DataFrame(records)
-    print(results_df)
 
-    # results_df.to_csv("fhn_a_sweep.csv", index=False)
+    plt.plot(
+        results_df["v0"],
+        results_df["final_peak_to_peak"],
+        marker="o",
+    )
 
-    plt.plot(results_df["parameter_value"], results_df["peak to peak"], marker="o")
-    plt.xlabel("v_0")
-    plt.ylabel("peak to peak")
-    plt.title("JR homogeneous sweep: v_0")
+    plt.xlabel(r"$v_0$")
+    plt.ylabel("Late-window peak-to-peak")
     plt.show()
 
+
 def jr_q_sweep(base_jr_params):
-    '''
+    """
     Sweeps a dimensionless timescale multiplier q to determine a working interval for the baseline dynamical regime.
 
     Define tau_e = 1/a and tau_i = 1/b s.t.
     tau_e' = qtau_e & tau_i' = qtau_i
 
     There is a jump at 0.95, and then smooth rise until basically forever. Working interval is 0.95 to 1.05.
-    '''
+    """
     records = []
 
     q_vals = np.linspace(0.8, 100, 101)
@@ -209,13 +285,25 @@ def jr_q_sweep(base_jr_params):
     plt.title("JR homogeneous sweep: q (timescale multiplier)")
     plt.show()
 
-def hetero_sweep(baseline_params, h_vals, sim_fn, set_fn, half_widths, param_to_vary, unit_traces=True, four_panel=False):
-    '''
-    Model agnostic heterogeneous sweep fn.
-    '''
 
-    if param_to_vary == 'a' or param_to_vary == 'tau': model = 'FHN'
-    else: model = 'JR'
+def hetero_sweep(
+    baseline_params,
+    h_vals,
+    sim_fn,
+    set_fn,
+    half_widths,
+    param_to_vary,
+    unit_traces=True,
+    four_panel=False,
+):
+    """
+    Model agnostic heterogeneous sweep fn.
+    """
+
+    if param_to_vary == "a" or param_to_vary == "tau":
+        model = "FHN"
+    else:
+        model = "JR"
 
     plot_data = []
 
@@ -226,37 +314,33 @@ def hetero_sweep(baseline_params, h_vals, sim_fn, set_fn, half_widths, param_to_
 
     for h in h_vals:
         t, pop_mean_V, V_traces, _ = hetero_sim(
-            baseline_params=baseline_params, 
-            h=h, 
+            baseline_params=baseline_params,
+            h=h,
             half_widths=half_widths,
-            sim_fn=sim_fn, 
+            sim_fn=sim_fn,
             set_fn=set_fn,
-            param_to_vary=param_to_vary
-            )
+            param_to_vary=param_to_vary,
+        )
 
         hetero_stats = stats(t, pop_mean_V)
 
         record = {
-                    "model": model,
-                    "parameter": param_to_vary,
-                    "h": h,
-                    "homo_mean": homo_stats["mean"],
-                    "homo_std": homo_stats["std"],
-                    "homo_dom_freq": homo_stats["dom_freq"],
-                    "homo_peak_to_peak": homo_stats["peak to peak"],
-                    "hetero_mean": hetero_stats["mean"],
-                    "hetero_std": hetero_stats["std"],
-                    "hetero_dom_freq": hetero_stats["dom_freq"],
-                    "hetero_peak_to_peak": hetero_stats["peak to peak"],
+            "model": model,
+            "parameter": param_to_vary,
+            "h": h,
+            "homo_mean": homo_stats["mean"],
+            "homo_std": homo_stats["std"],
+            "homo_dom_freq": homo_stats["dom_freq"],
+            "homo_peak_to_peak": homo_stats["peak to peak"],
+            "hetero_mean": hetero_stats["mean"],
+            "hetero_std": hetero_stats["std"],
+            "hetero_dom_freq": hetero_stats["dom_freq"],
+            "hetero_peak_to_peak": hetero_stats["peak to peak"],
         }
 
-        record["delta_mean"] = abs(
-            hetero_stats["mean"] - homo_stats["mean"]
-        )
+        record["delta_mean"] = abs(hetero_stats["mean"] - homo_stats["mean"])
 
-        record["delta_std"] = abs(
-            hetero_stats["std"] - homo_stats["std"]
-        )
+        record["delta_std"] = abs(hetero_stats["std"] - homo_stats["std"])
 
         record["delta_dom_freq"] = abs(
             hetero_stats["dom_freq"] - homo_stats["dom_freq"]
@@ -269,25 +353,30 @@ def hetero_sweep(baseline_params, h_vals, sim_fn, set_fn, half_widths, param_to_
         records.append(record)
 
         if unit_traces:
-            plot_homo_vs_hetero(model=model, 
-                                param_to_vary=param_to_vary, 
-                                h=h, t=t, 
-                                V_traces=V_traces, 
-                                pop_mean_V=pop_mean_V, 
-                                V=V, 
-                                unit_traces=unit_traces
-                                )
-        else: plot_data.append({
-            'model': model,
-            'parameter': param_to_vary,
-            'h': h,
-            't': t,
-            'homo_trace': V,
-            'hetero_trace': pop_mean_V,
-        })
-        
+            plot_homo_vs_hetero(
+                model=model,
+                param_to_vary=param_to_vary,
+                h=h,
+                t=t,
+                V_traces=V_traces,
+                pop_mean_V=pop_mean_V,
+                V=V,
+                unit_traces=unit_traces,
+            )
+        else:
+            plot_data.append(
+                {
+                    "model": model,
+                    "parameter": param_to_vary,
+                    "h": h,
+                    "t": t,
+                    "homo_trace": V,
+                    "hetero_trace": pop_mean_V,
+                }
+            )
 
-    if not unit_traces and four_panel: plot_four_panel_hetero(plot_data=plot_data)
+    if not unit_traces and four_panel:
+        plot_four_panel_hetero(plot_data=plot_data)
 
     results_df = pd.DataFrame(records)
     # print(results_df)
@@ -298,11 +387,6 @@ def hetero_sweep(baseline_params, h_vals, sim_fn, set_fn, half_widths, param_to_
     return results_df, plot_data
 
 
-
-
-
 # fhn_t_sweep(base_fhn_params)
 # jr_v_sweep(base_jr_params=base_jr_params)
 # jr_q_sweep(base_jr_params=base_jr_params)
-
-

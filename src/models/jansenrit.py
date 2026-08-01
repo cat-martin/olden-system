@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.integrate import solve_ivp
+from src.util.config import jr_duration
 
 
 
@@ -59,7 +60,7 @@ def jansen_rit(t, y, p=120.0, A=3.25, B=22.0, a=100.0, b=50.0, C=135.0, v0=6.0):
     return [dy0, dy1, dy2, dy3, dy4, dy5]
 
 
-def solve_jr(t_end=2.0, sf=1000, params=None, y0_init=None):
+def solve_jr(t_end=jr_duration, sf=1000, params=None, y0_init=None):
     """
     sf = 1000 # sampling frequency 1000Hz
     t_end = how long the sim will run for
@@ -93,10 +94,14 @@ def solve_jr(t_end=2.0, sf=1000, params=None, y0_init=None):
         t_eval=t_eval,  # the time points where we want it to sample
     )
 
+    # make sure solver finishes
+    if not sol.success:
+        raise RuntimeError(f'JR solver failed - {sol.message}')
+
     return sol
 
 
-def simulate_jr(params=None, t_end=2.0, sf=1000):
+def simulate_jr(params=None, t_end=jr_duration, sf=1000):
     sol = solve_jr(t_end=t_end, sf=sf, params=params)
     t = sol.t
     eeg_proxy = sol.y[1] - sol.y[2]

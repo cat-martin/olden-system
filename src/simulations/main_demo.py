@@ -6,6 +6,7 @@ from src.simulations.hetero import set_a_vals, set_q_vals, set_tau_vals, set_v_v
 from src.models.fhn import simulate_fhn
 from src.models.jansenrit import simulate_jr
 from src.analysis.visualization import plot_cross_model_comparison, plot_degradation_panels, plot_fragility_scores
+from src.analysis.sweeps import jr_v_sweep
 
 def main():
 
@@ -25,6 +26,8 @@ def main():
         param_to_vary='v0',
         unit_traces=True
     )
+
+    # jr_v_sweep(base_jr_params=base_jr_params)
 
     print("\nGenerating visual of superimposed homogeneous and heterogeneous\n popoulation behavior at heterogeneity \nlevel of 1.0 across all four heterogeneity tests...\n")
 

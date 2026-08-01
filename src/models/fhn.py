@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.integrate import solve_ivp
-from src.util.config import base_fhn_params
+from src.util.config import base_fhn_params, fhn_duration
 
 # rhs of the ivp solver
 def fhn_rhs(t, state, a, b, c, I):
@@ -20,7 +20,7 @@ I = 0.1 #0.1
 
 
 
-def simulate_fhn(params=base_fhn_params):
+def simulate_fhn(params=base_fhn_params, end=fhn_duration):
 
     a, b, c, I = (
         params["a"],
@@ -31,8 +31,8 @@ def simulate_fhn(params=base_fhn_params):
 
     # ivp solver settings
     init_state = [0.0, 0.0]
-    t_span = [0.0, 500.0]
-    t_points = np.linspace(0.0, 500.0, 5000)
+    t_span = [0.0, end]
+    t_points = np.linspace(0.0, end, int(end*10) + 1)
 
     # solver
     sol = solve_ivp(
@@ -42,6 +42,10 @@ def simulate_fhn(params=base_fhn_params):
         args=(a, b, c, I),
         t_eval=t_points,
     )
+
+    # make sure solver finishes
+    if not sol.success:
+        raise RuntimeError(f'FHN solver failed - {sol.message}')
 
     # unpack soln into state vars over time
     V = sol.y[0]

@@ -6,10 +6,48 @@ from matplotlib.ticker import PercentFormatter
 from src.util.config import *
 from src.models.jansenrit import simulate_jr
 from src.simulations.hetero import set_v_vals
-from src.analysis.math import calculate_relative_fragility_scores
+from src.analysis.math import calculate_relative_fragility_scores, cut_transient
+
+# DATA STRUCTURE REFERENCE
+#
+# plot_data: list of trace dictionaries returned by one hetero_sweep()
+# [
+#     {
+#         "model": "FHN" or "JR",
+#         "parameter": "a", "tau", "v0", or "q",
+#         "h": heterogeneity level,
+#         "t": complete time array,
+#         "homo_trace": homogeneous baseline trace,
+#         "hetero_trace": heterogeneous population-mean trace,
+#     },
+#     ...one dictionary per h level
+# ]
+#
+# four_panel_data: groups plot_data by model-parameter test
+# {
+#     "FHN a":   plot_data,
+#     "FHN tau": plot_data,
+#     "JR v0":   plot_data,
+#     "JR q":    plot_data,
+# }
+#
+# dataframes: groups feature-result DataFrames by model-parameter test
+# {
+#     "FHN a":   DataFrame,
+#     "FHN tau": DataFrame,
+#     "JR v0":   DataFrame,
+#     "JR q":    DataFrame,
+# }
+#
+# Each DataFrame (results_df) contains one row per h level and these columns:
+# model, parameter, h,
+# homo_mean, homo_std, homo_dom_freq, homo_peak_to_peak,
+# hetero_mean, hetero_std, hetero_dom_freq, hetero_peak_to_peak,
+# delta_mean, delta_std, delta_dom_freq, delta_peak_to_peak
 
 
 def plot_h_vs_std(results_df):
+    # transient is removed upstream in the stats function, don't need to do it here
     plt.figure()
     plt.title("h vs std change")
     plt.plot(results_df["h"], results_df["delta_std"], marker="o", label="std delta")
@@ -33,12 +71,14 @@ def plot_homo_vs_hetero(
     plt.xlabel("Time")
     plt.ylabel("Proxy Signal")
 
-    if unit_traces:
-        for i in range(5):
-            plt.plot(t, V_traces[i], alpha=0.6)
+    mask = cut_transient(t, 0.2)
 
-    plt.plot(t, pop_mean_V, label="Heterogeneous Population Mean")
-    plt.plot(t, V, label="Homogeneous Population Mean")
+    if unit_traces:
+        for i in range(3):
+            plt.plot(t[mask], V_traces[i][mask], alpha=0.6, label=f"rep het trace {i}")
+
+    plt.plot(t[mask], pop_mean_V[mask], label="Heterogeneous Population Mean")
+    plt.plot(t[mask], V[mask], label="Homogeneous Population Mean")
     plt.legend()
     plt.show()
 
@@ -53,8 +93,10 @@ def plot_homo_vs_hetero_ax(
     V,
 ):
 
-    ax.plot(t, pop_mean_V, label="Heterogeneous mean")
-    ax.plot(t, V, label="Homogeneous mean")
+    mask = cut_transient(t, 0.2)
+
+    ax.plot(t[mask], pop_mean_V[mask], label="Heterogeneous mean")
+    ax.plot(t[mask], V[mask], label="Homogeneous mean")
     ax.set_title(f"{model}: {param_to_vary} heterogeneity")
     ax.set_xlabel("Time")
     ax.set_ylabel("Proxy signal")
@@ -94,9 +136,12 @@ def plot_four_panel_hetero(plot_data):
 
 
 def find_run_at_h(plot_data, target_h):
-    """Return the plot-data record corresponding to target_h."""
+    """
+    Return the plot-data record corresponding to target_h
+    """
 
     for run in plot_data:
+        # use isclose just in case of floating point error
         if np.isclose(run["h"], target_h):
             return run
 
@@ -135,9 +180,11 @@ def plot_cross_model_comparison(four_panel_data, target_h=1.0):
 
         run = find_run_at_h(four_panel_data[test_key], target_h)
 
+        mask = cut_transient(run["t"], 0.2)
+
         ax.plot(
-            run["t"],
-            run["homo_trace"],
+            run["t"][mask],
+            run["homo_trace"][mask],
             label="Homogeneous mean",
             linestyle="--",
             linewidth=1.5,
@@ -145,8 +192,8 @@ def plot_cross_model_comparison(four_panel_data, target_h=1.0):
         )
 
         ax.plot(
-            run["t"],
-            run["hetero_trace"],
+            run["t"][mask],
+            run["hetero_trace"][mask],
             label="Heterogeneous mean",
             linewidth=1.5,
             linestyle="-",
@@ -214,7 +261,7 @@ def plot_degradation_panels(dataframes):
     axes = axes.flatten()
 
     for ax in axes:
-        ax.set_ylim(0, 0.85)
+        ax.set_ylim(0, 1.0)
 
     for ax, (test_key, title) in zip(axes, panel_specs):
 
