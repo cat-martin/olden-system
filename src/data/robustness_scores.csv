@@ -1,0 +1,13 @@
+method,domain,test_key,raw_AUC,relative_fragility,rank
+baseline_relative,full,FHN a,0.5469713311505644,7.5061845535537675,2
+baseline_relative,full,FHN tau,0.7286942217422611,10.0,1
+baseline_relative,full,JR v0,0.3655057508686725,5.015900222109237,4
+baseline_relative,full,JR q,0.5008938109658776,6.873854574670191,3
+baseline_relative,inner_half,FHN a,0.3360701555472035,5.391921284875582,2
+baseline_relative,inner_half,FHN tau,0.6232846100514954,10.0,1
+baseline_relative,inner_half,JR v0,0.19159419910912745,3.073944005986255,4
+baseline_relative,inner_half,JR q,0.310449575010594,4.980863798080059,3
+range_normalized,full,FHN a,0.6685766158320311,7.732124305700804,2
+range_normalized,full,FHN tau,0.8646739102979726,10.0,1
+range_normalized,full,JR v0,0.5711558490868094,6.605447929959921,4
+range_normalized,full,JR q,0.6509618786776312,7.5284089287868685,3
