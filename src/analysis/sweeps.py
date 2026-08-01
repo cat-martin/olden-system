@@ -204,6 +204,8 @@ def jr_v_sweep(base_jr_params):
     sweep_duration = 10.48
 
     for v in v_vals:
+
+        # we don't want to change og dictionary
         sweep_params = base_jr_params.copy()
         sweep_params["v0"] = v
 
@@ -212,21 +214,27 @@ def jr_v_sweep(base_jr_params):
             t_end=sweep_duration,
         )
 
+        # number of samples in the output trace
         n = len(proxy)
 
-        # compare the penultimate and final 20% of the simulation.
-        previous = proxy[int(0.60 * n) : int(0.80 * n)]
+        # compare the second to last and final 20% of the sim
+        # this should get rid of any transient problems
+        prev = proxy[int(0.60 * n) : int(0.80 * n)]
         final = proxy[int(0.80 * n) :]
 
-        previous_ptp = np.ptp(previous)
+        # peak to peak range of those sections
+        prev_ptp = np.ptp(prev)
         final_ptp = np.ptp(final)
 
-        stability_ratio = final_ptp / previous_ptp if previous_ptp > 1e-12 else np.nan
+        # i want a number that will tell me whether oscillation mag is still changing & how much
+        # avoid divide by zero issue
+        # not using this right now but it will be good for thesis expansion & detailed parameter range decisions
+        stability_ratio = final_ptp / prev_ptp if prev_ptp > 1e-12 else np.nan
 
         records.append(
             {
                 "v0": v,
-                "previous_peak_to_peak": previous_ptp,
+                "previous_peak_to_peak": prev_ptp,
                 "final_peak_to_peak": final_ptp,
                 "stability_ratio": stability_ratio,
             }
