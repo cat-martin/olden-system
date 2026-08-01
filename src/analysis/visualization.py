@@ -67,19 +67,76 @@ def plot_homo_vs_hetero(
     model, param_to_vary, h, t, V_traces, pop_mean_V, V, unit_traces=False
 ):
     plt.figure()
-    plt.title(f"{model} Heterogeneity Sweep: Deviation on '{param_to_vary}' | h={h}")
-    plt.xlabel("Time")
-    plt.ylabel("Proxy Signal")
+
+    # make the title dynamic & paper worthy
+    model_labels = {
+    "JR": "Jansen-Rit",
+    "FHN": "FitzHugh-Nagumo",
+    }
+
+    parameter_labels = {
+        "a": r"$a$",
+        "tau": r"$\tau_w$",
+        "v0": r"$v_0$",
+        "q": r"$q$",
+    }
+
+    model_label = model_labels.get(model, model)
+    parameter_label = parameter_labels.get(param_to_vary, param_to_vary)
+
+    plt.title(
+        rf"{model_label}: {parameter_label} heterogeneity ($h={h:g}$)"
+    )
+
+    plt.xlabel("Time (s)")
+    plt.ylabel(r"EEG proxy, $y_1-y_2$ (mV)")
 
     mask = cut_transient(t, 0.2)
 
     if unit_traces:
-        for i in range(3):
-            plt.plot(t[mask], V_traces[i][mask], alpha=0.6, label=f"rep het trace {i}")
+        for i in range(5):
+            plt.plot(
+                t[mask],
+                V_traces[i][mask],
+                color="#2ca02c",
+                alpha=0.45,
+                linewidth=1.0,
+                label=(
+                    "Representative units"
+                    if i == 0
+                    else "_nolegend_"
+                ),
+            )
 
-    plt.plot(t[mask], pop_mean_V[mask], label="Heterogeneous Population Mean")
-    plt.plot(t[mask], V[mask], label="Homogeneous Population Mean")
-    plt.legend()
+    plt.plot(
+        t[mask],
+        pop_mean_V[mask],
+        color="#8c564b",
+        linewidth=2.0,
+        label="Heterogeneous mean",
+    )
+
+    plt.plot(
+        t[mask],
+        V[mask],
+        color="#e377c2",
+        linewidth=2.0,
+        label="Homogeneous mean",
+    )
+
+    plt.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.16),
+        ncol=3,
+        fontsize=8,
+        frameon=False,
+    )
+
+    plt.gcf().subplots_adjust(bottom=0.24)
+    plt.savefig(
+        "src/data/visuals/frozen_dephase.pdf",
+        bbox_inches="tight",
+    )
     plt.show()
 
 
@@ -201,15 +258,18 @@ def plot_cross_model_comparison(four_panel_data, target_h=1.0):
         )
 
         ax.set_title(title)
-        ax.set_xlabel("Time")
 
+        # dynamically set axis titles
         if run["model"] == "FHN":
+            ax.set_xlabel("Time (model units)")
             ax.set_ylabel(r"Mean membrane variable, $V$")
 
         elif run["model"] == "JR":
-            ax.set_ylabel(r"Mean EEG proxy, $y_1-y_2$")
+            ax.set_xlabel("Time (s)")
+            ax.set_ylabel(r"Mean EEG proxy, $y_1-y_2$ (mV)")
 
         else:
+            ax.set_xlabel("Time")
             ax.set_ylabel("Population mean")
 
     handles, labels = axes[0].get_legend_handles_labels()
@@ -237,6 +297,10 @@ def plot_cross_model_comparison(four_panel_data, target_h=1.0):
         top=0.95, bottom=0.18, left=0.10, right=0.98, hspace=0.42, wspace=0.30
     )
 
+    plt.savefig(
+        "src/data/visuals/frozen_4_panel_trace.pdf",
+        bbox_inches="tight",
+    )
     plt.show()
 
 
@@ -339,6 +403,10 @@ def plot_degradation_panels(dataframes):
         wspace=0.30,
     )
 
+    plt.savefig(
+        "src/data/visuals/frozen_4_panel_stats.pdf",
+        bbox_inches="tight",
+    )
     plt.show()
 
 
@@ -346,60 +414,88 @@ def plot_fragility_scores(dataframes):
     raw_scores, scores = calculate_relative_fragility_scores(dataframes)
     
 
-    test_order = [
-        "FHN a",
-        "JR v0",
-        "FHN tau",
-        "JR q",
+        # Group the tests by matched functional role.
+    group_labels = [
+        "Threshold / excitability",
+        "Intrinsic timescale",
     ]
 
-    labels = [
-        r"FHN $a$",
-        r"JR $v_0$",
-        r"FHN $\tau_w$",
-        r"JR $q$",
+    fhn_values = [
+        scores["FHN a"],
+        scores["FHN tau"],
     ]
 
-    values = [scores[test] for test in test_order]
-
-    colors = [
-        "#2A9D8F",  # teal
-        "#B565A7",  # magenta
-        "#5E81AC",  # slate blue
-        "#E76F51",  # coral
+    jr_values = [
+        scores["JR v0"],
+        scores["JR q"],
     ]
+
+    x = np.arange(len(group_labels))
+    width = 0.34
 
     fig, ax = plt.subplots(figsize=(7, 4.5))
 
-    bars = ax.bar(
-        labels,
-        values,
-        color=colors,
-        width=0.65,
+    fhn_bars = ax.bar(
+        x - width / 2,
+        fhn_values,
+        width,
+        label="FHN",
+        color="#2A9D8F",
+        edgecolor="#303030",
+        linewidth=0.7,
+    )
+
+    jr_bars = ax.bar(
+        x + width / 2,
+        jr_values,
+        width,
+        label="JR",
+        color="#B565A7",
         edgecolor="#303030",
         linewidth=0.7,
     )
 
     ax.set_title(
-        "Relative Fragility Across Model–Parameter Tests",
+        "Relative Fragility by Functional Probe",
         pad=12,
     )
 
-    ax.set_xlabel("Model–parameter test")
+    ax.set_xlabel("Functional probe")
     ax.set_ylabel("Relative fragility score")
     ax.set_ylim(0, 10.8)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(group_labels)
+
+    ax.legend(
+        frameon=False,
+        loc="upper left",
+    )
 
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
     ax.bar_label(
-        bars,
-        labels=[f"{value:.1f}" for value in values],
+        fhn_bars,
+        labels=[f"{value:.1f}" for value in fhn_values],
+        padding=4,
+        fontsize=10,
+    )
+
+    ax.bar_label(
+        jr_bars,
+        labels=[f"{value:.1f}" for value in jr_values],
         padding=4,
         fontsize=10,
     )
 
     fig.tight_layout()
+
+    fig.savefig(
+        "src/data/visuals/frozen_fragility_scores.pdf",
+        bbox_inches="tight",
+    )
+
     plt.show()
 
     return raw_scores, scores
@@ -411,4 +507,4 @@ def plot_fragility_scores(dataframes):
 
 # one four panel feature degredation curve, with std and peak to peak
 
-# one fragility score comparison, perhaps a mock radar chart
+# one fragility score comparison

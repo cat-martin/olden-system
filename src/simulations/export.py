@@ -96,7 +96,8 @@ def main():
 
         all_frames = pd.concat(frames, ignore_index=True)
 
-        filename = f"{output_path}{sims_list[0]['model']}_" f"{sims_list[0]['parameter']}_trace.csv"
+        new_name = name.lower().replace(" ", "_")
+        filename = f"{output_path}{new_name}_traces.csv"
 
         all_frames.to_csv(
             filename,
@@ -124,7 +125,12 @@ def main():
     )
 
     for name, df in dataframes.items():
-        df.to_csv(f"{output_path + name}.csv", index=False)
+        new_name = name.lower().replace(" ", "_")
+
+        df.to_csv(
+            f"{output_path}{new_name}_features.csv",
+            index=False,
+        )
 
 
 if __name__ == "__main__":
