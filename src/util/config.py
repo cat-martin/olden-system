@@ -25,8 +25,8 @@ base_fhn_params = {
 
 half_widths = {
     'a': 0.17,
-    'tau': 7.0,
-    'q': 0.05,
+    'tau': 45.0,
+    'q': 0.015,
     'v0': 0.1
 }
 
