@@ -1,0 +1,7 @@
+method,domain,model,raw_fragility,relative_fragility,rank
+baseline_relative,full,FHN,0.6378327764464127,10.0,1
+baseline_relative,full,JR,0.43319978091727507,6.791745374560102,2
+baseline_relative,inner_half,FHN,0.47967738279934946,9.999999999999998,1
+baseline_relative,inner_half,JR,0.2510218870598607,5.2331399407435475,2
+range_normalized,full,FHN,0.7666252630650019,10.0,1
+range_normalized,full,JR,0.6110588638822203,7.970763465831791,2

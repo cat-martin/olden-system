@@ -4,6 +4,7 @@ from src.analysis.math import (
     calculate_relative_fragility_scores,
     rescale_domain,
     calculate_range_normalized_scores,
+    calculate_model_fragility_scores,
 )
 
 
@@ -55,10 +56,12 @@ def main():
     ]
 
     scores = []
+    model_scores = []
 
     # i want to figure out where each test falls based on the conditions so i should make a ranking column
     for method, domain, raw_scores, relative_scores in conditions:
 
+        # -------- test level robustness at this condition
         ordered_tests = sorted(raw_scores, key=raw_scores.get, reverse=True)
 
         # assigns rank to each of the 4 ordered tests
@@ -77,64 +80,107 @@ def main():
                 }
             )
 
-    # export comparison table
+        # ------- checking robustness for model level comparisons at this condition
+
+        model_raw, model_relative = calculate_model_fragility_scores(raw_scores)
+
+        ordered_models = sorted(model_raw, key=model_raw.get, reverse=True)
+
+        model_ranks = {
+            model: rank for rank, model in enumerate(ordered_models, start=1)
+        }
+
+        for model, raw_score in model_raw.items():
+            model_scores.append(
+                {
+                    "method": method,
+                    "domain": domain,
+                    "model": model,
+                    "raw_fragility": raw_score,
+                    "relative_fragility":
+                        model_relative[model],
+                    "rank": model_ranks[model],
+                }
+            )
+
+    # export comparison tables
 
     scores_df = pd.DataFrame(scores)
+    model_scores_df = pd.DataFrame(model_scores)
 
-    scores_df.to_csv('src/data/robustness_scores.csv', index=False)
+    scores_df.to_csv("src/data/robustness_scores.csv", index=False)
+    model_scores_df.to_csv("src/data/model_robustness_scores.csv",index=False)
 
+    # -------- robustness display -----------
     # make the robustness results legible
 
     condition_labels = {
-        ("baseline_relative", "full"):
-            "Distance-from-reference normalization — "
-            "full parameter domain",
-
-        ("baseline_relative", "inner_half"):
-            "Distance-from-reference normalization — "
-            "inner half of parameter domain "
-            "(original h <= 0.5; integration axis rescaled to 0–1)",
-
-        ("range_normalized", "full"):
-            "Range normalization — full parameter domain",
+        ("baseline_relative", "full"): "Distance-from-reference normalization — "
+        "full parameter domain",
+        ("baseline_relative", "inner_half"): "Distance-from-reference normalization — "
+        "inner half of parameter domain "
+        "(original h <= 0.5; integration axis rescaled to 0–1)",
+        ("range_normalized", "full"): "Range normalization — full parameter domain",
     }
 
-    print('\n****** Robustness Analysis ******')
+    print("\n****** Robustness Analysis ******\n")
 
-    for (method, domain), label, in condition_labels.items():
+    for (
+        (method, domain),
+        label,
+    ) in condition_labels.items():
         # find the rows of the df that match the condition
         table = scores_df.loc[
-            (scores_df['method'] == method) &
-            (scores_df['domain'] == domain)
+            (scores_df["method"] == method) & (scores_df["domain"] == domain)
         ].copy()
 
-        table = table.sort_values('rank')
+        table = table.sort_values("rank")
 
         # get rid of the rows we don't care about for display
-        table = table[[
-            'rank',
-            'test_key',
-            'raw_AUC',
-            'relative_fragility',
-        ]]
+        table = table[
+            [
+                "rank",
+                "test_key",
+                "raw_AUC",
+                "relative_fragility",
+            ]
+        ]
 
         # give them nice names
         table = table.rename(
             columns={
-                'rank': 'Rank',
-                'test_key': 'Test',
-                'raw_AUC': 'Raw Area Under Curve',
-                'relative_fragility': 'Relative Fragility',
+                "rank": "Rank",
+                "test_key": "Test",
+                "raw_AUC": "Raw Area Under Curve",
+                "relative_fragility": "Relative Fragility",
             }
         )
 
         # gotta round the values
-        table['Raw Area Under Curve'] = table["Raw Area Under Curve"].round(2)
-        table['Relative Fragility'] = table["Relative Fragility"].round(2)
+        table["Raw Area Under Curve"] = table["Raw Area Under Curve"].round(2)
+        table["Relative Fragility"] = table["Relative Fragility"].round(2)
 
         # to console
-        print(f'{label}')
+        print(f"{label}")
         print(table.to_string(index=False))
+
+        # adding the table for the model specific fragility score comparisons across robustness checks, one for each condition
+
+        model_table = model_scores_df.loc[
+            (model_scores_df['method'] == method) &
+            (model_scores_df['domain'] == domain)
+        ].sort_values("rank")
+
+        print("\nModel Level Scores")
+        print(
+            model_table[
+                ['rank', 'model', 'raw_fragility', 'relative_fragility']
+            ].round(2).to_string(index=False)
+            
+        )
+        print("\n")
+        print("---------------------------------------------------")
+        print("\n")
 
 
 if __name__ == "__main__":

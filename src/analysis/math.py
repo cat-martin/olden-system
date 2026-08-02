@@ -141,3 +141,42 @@ def calculate_range_normalized_scores(dataframes):
 
     return raw_scores, relative_scores
 
+# combines the test scores per model using equal weighting of raw AUC values
+def calculate_model_fragility_scores(raw_scores):
+    '''
+    Accepts raw AUC dictionary indexed by test key
+    '''
+
+    model_tests = {
+        'FHN': ['FHN a', 'FHN tau'],
+        'JR': ['JR q', 'JR v0'],
+    }
+
+    model_raw_scores = {
+        'FHN': [],
+        'JR': [],
+    }
+
+    for test_key, score in raw_scores.items():
+        if test_key in model_tests['FHN']:
+            model_raw_scores['FHN'].append(score)
+        elif test_key in model_tests['JR']:
+            model_raw_scores['JR'].append(score)
+
+    # averages raw AUC for each model
+    # remember that iterating directly over a dict returns keys
+    for model in model_tests:
+        model_raw_scores[model] = np.mean(model_raw_scores[model])
+
+    # max normalize them
+    max_score = max(model_raw_scores.values())
+
+    # calculates 10(S_raw/ (S_raw_max))
+    # largest score becomes exactly 10
+    relative_scores = {
+        model_key: 10 * raw_score / max_score
+        for model_key, raw_score in model_raw_scores.items()
+    }
+
+    return model_raw_scores, relative_scores
+

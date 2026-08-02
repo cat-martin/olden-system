@@ -11,7 +11,7 @@ from src.util.config import (
 from src.simulations.hetero import set_a_vals, set_q_vals, set_tau_vals, set_v_vals
 from src.models.fhn import simulate_fhn
 from src.models.jansenrit import simulate_jr
-from src.analysis.math import calculate_relative_fragility_scores
+from src.analysis.math import calculate_relative_fragility_scores, calculate_model_fragility_scores
 
 
 def main():
@@ -106,6 +106,9 @@ def main():
 
     raw_scores, scores = calculate_relative_fragility_scores(dataframes)
 
+    model_raw_scores, model_scores = calculate_model_fragility_scores(raw_scores)
+
+    # construct test specific export file
     score_rows = []
 
     for test_key in raw_scores:
@@ -131,6 +134,20 @@ def main():
             f"{output_path}{new_name}_features.csv",
             index=False,
         )
+
+    # construct model specific export file
+    model_score_rows = []
+
+    for model_key in model_raw_scores:
+        model_score_rows.append({
+            'model': model_key,
+            'raw_fragility': model_raw_scores[model_key],
+            'relative_fragility': model_scores[model_key]
+        })
+
+    model_scores_df = pd.DataFrame(model_score_rows)
+
+    model_scores_df.to_csv(f"{output_path}model_fragility_scores.csv", index=False)
 
 
 if __name__ == "__main__":
