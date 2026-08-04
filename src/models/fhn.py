@@ -4,6 +4,7 @@ from src.util.config import base_fhn_params, fhn_duration
 
 # rhs of the ivp solver
 def fhn_rhs(t, state, a, b, c, I):
+    '''rhs of the ivp solver for FitzHugh-Nagumo'''
     V, w = state
 
     # fhn equations
@@ -12,16 +13,9 @@ def fhn_rhs(t, state, a, b, c, I):
 
     return [dV_dt, dw_dt]
 
-# baseline params
-a = -0.1 #-0.1
-b = 0.01 #0.01
-c = 0.02 #0.02
-I = 0.1 #0.1
-
-
 
 def simulate_fhn(params=base_fhn_params, end=fhn_duration):
-
+    '''Actually runs the solver and integrates, returns time and membrane variable traces for an individual unit using 'params' '''
     a, b, c, I = (
         params["a"],
         params["b"],
@@ -51,58 +45,3 @@ def simulate_fhn(params=base_fhn_params, end=fhn_duration):
     V = sol.y[0]
 
     return t_points, V
-
-
-# params = base_fhn_params.copy()
-# params["c"] = 1/57
-# t_points, V = simulate_fhn(params)
-
-
-
-
-# transient check, chop off first 100 secs
-# transient = 100.0
-# mask = t_points >= transient
-
-# # baseline descriptors
-# V_steady = V[mask]
-
-# V_mean = np.mean(V_steady)
-
-# V_std = np.std(V_steady)
-
-# print("Mean V: ", V_mean)
-# print("Std V: ", V_std)
-
-# # dominant frequency
-# dt = sol.t[1] - sol.t[0]
-# freqs = np.fft.rfftfreq(len(V_steady), d=dt)   # create possible frequencies
-# spectrum = np.abs(np.fft.rfft(V_steady - V_mean))  # remove vertical offset, return strength of frequency contributions
-# dominant_idx = np.argmax(spectrum[1:]) + 1   # ignores frequency 0, returns largest of remaining values, +1 since we skip frq 0
-# dominant_freq = freqs[dominant_idx]
-# print("Dominant Frequency: ", dominant_freq)
-
-# period = 1.0 / dominant_freq
-# print("Period: ", period)
-
-# # plotting
-# plt.figure()
-# plt.plot(freqs[1:], spectrum[1:])
-
-# plt.xlim(0, dominant_freq * 5)
-
-# plt.xlabel("Frequency")
-# plt.ylabel("Magnitude")
-# plt.title("Frequency Spectrum of V")
-
-# plt.show()
-
-
-# plt.plot(t_points[mask], V[mask], label="V")
-# plt.plot(t_points[mask], w[mask], label="w")
-
-# plt.xlabel("Time")
-# plt.ylabel("State Val")
-# plt.title("FHN State Evolution")
-# plt.legend()
-# plt.show()

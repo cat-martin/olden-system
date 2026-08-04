@@ -1,5 +1,10 @@
 from src.analysis.sweeps import hetero_sweep
-from src.util.config import *
+from src.util.config import (
+    base_fhn_params,
+    base_jr_params,
+    half_widths,
+    simple_h_vals,
+)
 from src.simulations.hetero import set_a_vals, set_q_vals, set_tau_vals, set_v_vals
 from src.models.fhn import simulate_fhn
 from src.models.jansenrit import simulate_jr
@@ -16,22 +21,22 @@ def main():
     dataframes = {}
 
     print(
-        "This is the main demonstration showcasing the comparison \nof FitzHugh-Nagumo and Jansen Rit models on the heterogeneity axis \nof the five dimensional framework.\n"
+        "This is the main demonstration showcasing the comparison \nof FitzHugh-Nagumo and Jansen Rit models on the preliminary heterogeneity axis \nof the five dimensional framework.\n"
     )
 
     print(
-        "\nSweep illustrating differences in JR population mean \nwith and without heterogeneous 'v0' values. Demonstrates \nhow dephasing causes oscillation collapse in heterogeneous \npopulation mean:\n"
+        "\nSweep illustrating differences in JR population mean \nwith and without heterogeneous 'v0' values. Demonstrates \nhow dephasing causes attentuation in heterogeneous \npopulation mean:\n"
     )
 
-    # dataframe, plot_data = hetero_sweep(
-    #     baseline_params=base_jr_params,
-    #     h_vals=[0.75],
-    #     sim_fn=simulate_jr,
-    #     set_fn=set_v_vals,
-    #     half_widths=half_widths,
-    #     param_to_vary="v0",
-    #     unit_traces=True,
-    # )
+    dataframe, plot_data = hetero_sweep(
+        baseline_params=base_jr_params,
+        h_vals=[0.75],
+        sim_fn=simulate_jr,
+        set_fn=set_v_vals,
+        half_widths=half_widths,
+        param_to_vary="v0",
+        unit_traces=True,
+    )
 
     print("\nGenerating visual of superimposed homogeneous and heterogeneous\n popoulation behavior at heterogeneity \nlevel of 1.0 across all four heterogeneity tests...\n")
 

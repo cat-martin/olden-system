@@ -1,14 +1,11 @@
 import numpy as np
-from src.models.fhn import simulate_fhn
-from src.util.config import half_widths
-
-'''
-want to create a heterogeneous parameter population with an exact baseline mean
-
-h in [0,1] is the heterogeneity level, where h=0.5 allows deviations that extend halfway toward the interval boundaries
-'''
 
 def hetero_vals(baseline, half_width, h, num_units=100, seed=None):
+    '''
+    Creates a heterogeneous parameter population with an exact baseline mean
+
+    h in [0,1] is the heterogeneity level, where h=0.5 allows deviations that extend halfway toward the interval boundaries
+    '''
     
     if not 0 <= h <= 1:
         raise ValueError("h must be between 0 and 1")
@@ -27,10 +24,12 @@ def hetero_vals(baseline, half_width, h, num_units=100, seed=None):
 
     rng.shuffle(norm_dev)
 
+    # applies the calc to every point in the vector of samples
     params = (baseline + h * half_width * norm_dev)
 
     return params
 
+# these functions just allow the creation of a new parameter set that contains the heterogeneous parameter to simulate a single unit with 
 def set_a_vals(baseline_params, a_val):
     unit_params = baseline_params.copy()
     unit_params['a'] = a_val
@@ -55,6 +54,7 @@ def set_v_vals(baseline_params, v):
     unit_params["v0"] = v
     return unit_params
 
+# internals of hetero_sweep
 def hetero_sim(
         baseline_params, 
         h, 
@@ -64,6 +64,7 @@ def hetero_sim(
         set_fn, 
         num_units=100, 
         seed=37):
+    '''Generates hetero ensembles, informs the user of what's going on, simulates the hetero units, collects the traces, and returns them along with the ensemble pointwise mean.'''
     
     # handle special cases where hetero params are derived
     if param_to_vary == "tau":
@@ -72,7 +73,8 @@ def hetero_sim(
         baseline = 1
     else:
         baseline = baseline_params[param_to_vary]
-    
+
+    # generate hetero parameters
     vals = hetero_vals(
         baseline=baseline, 
         half_width=half_widths[param_to_vary], 
@@ -88,6 +90,7 @@ def hetero_sim(
     flush=True,
     )
 
+    # create new parameter sets & simulate individual units
     for val in vals:
         unit_params = set_fn(baseline_params, val)
         t, V = sim_fn(unit_params)
@@ -98,70 +101,6 @@ def hetero_sim(
     pop_mean_V = np.mean(V_traces, axis=0)
 
     return t, pop_mean_V, V_traces, vals
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# def sim_fhn_hetero_pop_a(baseline_params, h, half_width=0.17, num_units=100, seed=37):
-#     '''
-#     Simulates a population of FHN neurons of the specified heterogeneity level, varying parameter 'a'.
-#     '''
-#     a_vals = hetero_vals(baseline=baseline_params["a"], half_width=half_width, h=h, num_units=num_units, seed=seed)
-
-#     V_traces = []
-
-#     # simulate and store traces for each unit
-#     for a_val in a_vals:
-#         unit_params = baseline_params.copy()
-#         unit_params["a"] = a_val
-
-#         t, V, _ = simulate_fhn(**unit_params)
-    
-#         V_traces.append(V)
-
-#     # turn list of arrays into 2D array
-#     V_traces = np.array(V_traces)
-
-#     # average along the 0 axis, aka take average of V across all units at each time point
-#     pop_mean_V = np.mean(V_traces, axis=0)
-
-#     return t, pop_mean_V, V_traces, a_vals
-
-# def sim_fhn_hetero_pop_tau(baseline_params, h, half_width=7.0, num_units=100, seed=37):
-#     '''
-#     Simulates a population of FHN neurons of the specified heterogeneity level, varying the recovery timescale 1/c while keeping b/c fixed.
-#     '''
-
-#     tau_vals = hetero_vals(baseline=1/baseline_params["c"], half_width=half_width, h=h, num_units=num_units, seed=seed)
-
-#     V_traces = []
-
-#     kappa = baseline_params['b'] / baseline_params['c']
-
-#     for tau in tau_vals:
-#         unit_params = baseline_params.copy()
-#         unit_params["c"] = 1.0/tau
-#         unit_params["b"] = kappa * unit_params["c"]
-
-#         t, V, _ = simulate_fhn(**unit_params)
-
-#         V_traces.append(V)
-
-#     V_traces = np.array(V_traces)
-
-#     pop_mean_V = np.mean(V_traces, axis=0)
-
-#     return t, pop_mean_V, V_traces, tau_vals
 
 
 

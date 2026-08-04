@@ -2,13 +2,11 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from src.util.config import jr_duration
 
-
-
 def sigmoid(v, e0=2.5, v0=6.0, r=0.56):
     """
     Population voltage --> firing rate transformation that applies to each of the three neuronal populations.
     e0 = half the max firing rate
-    r = sigmoid time constant, determines sigmoid steepness
+    r = sigmoid slope parameter, determines sigmoid steepness
     v0 = threshold, center of sigmoid
     Default values taken from standard formulation.
     """
@@ -30,7 +28,7 @@ def jansen_rit(t, y, p=120.0, A=3.25, B=22.0, a=100.0, b=50.0, C=135.0, v0=6.0):
     y = current state vector, holds all six state variables
     p = external input
     A, B = excitatory, inhibitory gain
-    a, b = excitatory, inhibitory time constant
+    a, b = excitatory, inhibitory rate constant
     C = connectivity strength
 
     Default values taken from standard model.
@@ -102,6 +100,7 @@ def solve_jr(t_end=jr_duration, sf=1000, params=None, y0_init=None):
 
 
 def simulate_jr(params=None, t_end=jr_duration, sf=1000):
+    '''Interface function that runs the jr solver and simulates one unit with supplied params'''
     sol = solve_jr(t_end=t_end, sf=sf, params=params)
     t = sol.t
     eeg_proxy = sol.y[1] - sol.y[2]

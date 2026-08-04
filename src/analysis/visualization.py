@@ -1,14 +1,9 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
-
-from src.util.config import *
-from src.models.jansenrit import simulate_jr
-from src.simulations.hetero import set_v_vals
 from src.analysis.math import calculate_relative_fragility_scores, cut_transient
 
-# DATA STRUCTURE REFERENCE
+# data structure reference
 #
 # plot_data: list of trace dictionaries returned by one hetero_sweep()
 # [
@@ -39,11 +34,15 @@ from src.analysis.math import calculate_relative_fragility_scores, cut_transient
 #     "JR q":    DataFrame,
 # }
 #
-# Each DataFrame (results_df) contains one row per h level and these columns:
+# each dataframe (results_df) contains one row per h level and these columns:
 # model, parameter, h,
 # homo_mean, homo_std, homo_dom_freq, homo_peak_to_peak,
 # hetero_mean, hetero_std, hetero_dom_freq, hetero_peak_to_peak,
 # delta_mean, delta_std, delta_dom_freq, delta_peak_to_peak
+
+
+
+# would like to improve figure blocking - they get chaotic sometimes esp in main demo
 
 
 def plot_h_vs_std(results_df):
@@ -91,6 +90,7 @@ def plot_homo_vs_hetero(
     plt.xlabel("Time (s)")
     plt.ylabel(r"EEG proxy, $y_1-y_2$ (mV)")
 
+    # this function receives raw traces so we DO need to cut the transient
     mask = cut_transient(t, 0.2)
 
     if unit_traces:
@@ -150,6 +150,7 @@ def plot_homo_vs_hetero_ax(
     V,
 ):
 
+    # takes raw traces, cut the transient
     mask = cut_transient(t, 0.2)
 
     ax.plot(t[mask], pop_mean_V[mask], label="Heterogeneous mean")
@@ -237,6 +238,7 @@ def plot_cross_model_comparison(four_panel_data, target_h=1.0):
 
         run = find_run_at_h(four_panel_data[test_key], target_h)
 
+        # working with raw traces again
         mask = cut_transient(run["t"], 0.2)
 
         ax.plot(
@@ -306,12 +308,11 @@ def plot_cross_model_comparison(four_panel_data, target_h=1.0):
 
 def plot_degradation_panels(dataframes):
     """
-
     Plot relative degradation in standard deviation and peak-to-peak
-
-    amplitude across heterogeneity levels for all four tests.
-
+    range across heterogeneity levels for all four tests
     """
+
+    # transient has been cut out upstream
 
     panel_specs = [
         ("FHN a", r"(a) FHN threshold: $a$"),
@@ -411,10 +412,11 @@ def plot_degradation_panels(dataframes):
 
 
 def plot_fragility_scores(dataframes):
+    '''Plot test-level fragility scores grouped by functional probe'''
     raw_scores, scores = calculate_relative_fragility_scores(dataframes)
     
 
-        # Group the tests by matched functional role.
+    # group the tests by functional role
     group_labels = [
         "Threshold / excitability",
         "Intrinsic timescale",

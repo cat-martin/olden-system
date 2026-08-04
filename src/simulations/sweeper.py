@@ -9,6 +9,8 @@ from src.simulations.hetero import set_a_vals, set_q_vals, set_tau_vals, set_v_v
 
 def main():
 
+    # keep the sweep results for refined interval selection in the future
+
     # shows refined interval of [0.985, 1.015] or half width=0.015
     jr_q_results = persistent_parameter_sweep(
         baseline_params=base_jr_params,

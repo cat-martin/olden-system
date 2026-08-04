@@ -22,7 +22,7 @@ def stats(t, y_axis, transient_frac=0.2):
     y_mean = np.mean(y_cut)
     y_std = np.std(y_cut)
 
-    # dominant frequency
+    # dominant frequency - isn't actually used in the current study but is retained for future development
     dt = t_cut[1] - t_cut[0]
     freqs = np.fft.rfftfreq(len(y_cut), d=dt)  # create possible frequencies
     spectrum = np.abs(
@@ -42,7 +42,7 @@ def stats(t, y_axis, transient_frac=0.2):
         "peak to peak": amplitude,
     }
 
-
+# revision of sweep logic, improved from initial sweeps to consider late amplitude changes rather than absolute amplitude
 def persistent_parameter_sweep(
     baseline_params,
     parameter_vals,
@@ -134,7 +134,9 @@ def persistent_parameter_sweep(
 
     return results_df
 
-
+# this stores post transient results and raw traces at the same time and i probably want to change that later for cleanliness
+# i also might want to refactor to remove the four_panel argument
+# and create a way for the sim that shows dephasing to run without forcing the user to change the duration in config.py
 def hetero_sweep(
     baseline_params,
     h_vals,
@@ -146,7 +148,7 @@ def hetero_sweep(
     four_panel=False,
 ):
     """
-    Model agnostic heterogeneous sweep fn.
+    Model agnostic heterogeneous sweep fn. Simulates heterogeneous ensembles for each h level, creates dataframe of records from the runs, and assists with plotting four panel diagram if unit_traces is False and four_panel is True
     """
 
     if param_to_vary == "a" or param_to_vary == "tau":
